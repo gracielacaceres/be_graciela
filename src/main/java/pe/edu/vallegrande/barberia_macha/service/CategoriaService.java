@@ -58,9 +58,15 @@ public class CategoriaService {
         return categoriaRepository.findByEstado(estado);
     }
 
+    public List<Categoria> listarCategoriasPorEstadoActivo() {
+        return listarCategoriasPorEstado("A");
+    }
+
+    public List<Categoria> listarCategoriasPorEstadoInactivo() {
+        return listarCategoriasPorEstado("I");
+    }
+
     public boolean checkNombreExists(String nombre) {
         return categoriaRepository.existsByNombre(nombre);
     }
-
-
 }
