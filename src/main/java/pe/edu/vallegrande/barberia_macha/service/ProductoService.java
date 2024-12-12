@@ -24,6 +24,16 @@ public class ProductoService {
         return productoRepository.findByEstado(estado);
     }
 
+    // Listar productos activos
+    public List<Producto> listarProductosActivos() {
+        return listarProductosPorEstado(1); // 1 indica que están activos
+    }
+
+    // Listar productos inactivos
+    public List<Producto> listarProductosInactivos() {
+        return listarProductosPorEstado(0); // 0 indica que están inactivos
+    }
+
     public Producto agregarProducto(Producto producto) {
         // Validaciones básicas antes de guardar
         if (producto.getNombre() == null || producto.getNombre().isEmpty()) {
@@ -86,6 +96,4 @@ public class ProductoService {
     public boolean checkNombreExists(String nombre) {
         return productoRepository.existsByNombre(nombre);
     }
-
-
 }
