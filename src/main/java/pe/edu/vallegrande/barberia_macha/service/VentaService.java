@@ -14,7 +14,9 @@ import pe.edu.vallegrande.barberia_macha.repository.VentaRepository;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class VentaService {
@@ -78,16 +80,67 @@ public class VentaService {
     }
 
     @Transactional
-    public Venta editarVenta(Long id, Venta venta) {
-        Venta ventaExistente = ventaRepository.findById(id)
+    public Venta actualizarVenta(Long id, Venta ventaUpdated) {
+        Venta venta = ventaRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Venta no encontrada"));
 
-        ventaExistente.setUsuario(venta.getUsuario());
-        ventaExistente.setFechaVenta(venta.getFechaVenta());
-        ventaExistente.setMontoTotal(venta.getMontoTotal());
-        ventaExistente.setDetalles(venta.getDetalles());
+        // Actualizar los datos de la venta
+        venta.setUsuario(ventaUpdated.getUsuario());
+        venta.setFechaVenta(ventaUpdated.getFechaVenta());
+        venta.setEstado(ventaUpdated.getEstado());
 
-        return ventaRepository.save(ventaExistente);
+        // Actualizar los detalles de la venta
+        actualizarDetallesVenta(venta, ventaUpdated.getDetalles());
+
+        // Calcular el total de la venta
+        calcularMontoTotalVenta(venta);
+
+        // Guardar la venta actualizada
+        return ventaRepository.save(venta);
+    }
+
+
+     private void actualizarDetallesVenta(Venta venta, List<DetalleVenta> updatedDetails) {
+        // Mapa de detalles actuales para búsqueda rápida por ID
+        Map<Long, DetalleVenta> currentDetailsMap = venta.getDetalles().stream()
+                .collect(Collectors.toMap(DetalleVenta::getIdDetalleVenta, detalle -> detalle));
+
+        for (DetalleVenta detalle : updatedDetails) {
+            if (detalle.getIdDetalleVenta() == null) {
+                // Nuevo detalle, agregarlo a la venta
+                detalle.setVenta(venta);
+                detalleVentaRepository.save(detalle);
+            } else if (currentDetailsMap.containsKey(detalle.getIdDetalleVenta())) {
+                // Detalle existente, actualizar
+                DetalleVenta existingDetail = currentDetailsMap.get(detalle.getIdDetalleVenta());
+                existingDetail.setProducto(detalle.getProducto());
+                existingDetail.setCantidad(detalle.getCantidad());
+                existingDetail.setPrecioUnitario(detalle.getPrecioUnitario());
+                existingDetail.setSubtotal(detalle.getSubtotal());
+                detalleVentaRepository.save(existingDetail);
+            }
+        }
+
+        // Eliminar detalles que ya no están presentes
+        venta.getDetalles().removeIf(detalle -> !updatedDetails.stream()
+                .map(DetalleVenta::getIdDetalleVenta)
+                .collect(Collectors.toList())
+                .contains(detalle.getIdDetalleVenta()));
+    }
+
+
+
+
+    private void calcularMontoTotalVenta(Venta venta) {
+        double total = 0.0;
+        for (DetalleVenta detalle : venta.getDetalles()) {
+            Producto producto = productoRepository.findById(detalle.getProducto().getIdProducto())
+                    .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
+            double subtotal = detalle.getCantidad() * detalle.getPrecioUnitario();
+            detalle.setSubtotal(subtotal);
+            total += subtotal;
+        }
+        venta.setMontoTotal(total);
     }
 
     @Transactional

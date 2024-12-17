@@ -46,11 +46,16 @@ public class VentaController {
         return ventaService.listarVentasPorEstado("I");
     }
 
-
     @PutMapping("/editar/{id}")
     public ResponseEntity<Venta> editarVenta(@PathVariable Long id, @RequestBody Venta venta) {
-        Venta ventaEditada = ventaService.editarVenta(id, venta);
-        return ResponseEntity.ok(ventaEditada);
+        try {
+            Venta ventaEditada = ventaService.actualizarVenta(id, venta);
+            return ResponseEntity.ok(ventaEditada);
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(500).build();
+        }
     }
 
     @PutMapping("/eliminar/{id}")

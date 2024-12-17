@@ -10,6 +10,7 @@ import pe.edu.vallegrande.barberia_macha.service.CategoriaService;
 import java.util.List;
 import java.util.Optional;
 
+@CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/api/categorias")
 public class CategoriaController {
